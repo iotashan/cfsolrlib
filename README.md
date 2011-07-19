@@ -1,7 +1,7 @@
 CFSolrLib 2
 =============
 
-CFSolrLib is a library that lets you interact directly with a Solr server, using the native java client library.</p
+CFSolrLib is a library that lets you interact directly with a Solr server, using the native java client library.
 
 Requirements
 -------
