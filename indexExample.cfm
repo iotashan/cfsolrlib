@@ -10,9 +10,9 @@ FROM art
 	for (i=1;i LTE getArt.recordcount;i=i+1) {
 		thisDoc = arrayNew(1);
 		
-		sampleSolrInstance.addField(thisDoc,"id",getArt.artID[i]);
-		sampleSolrInstance.addField(thisDoc,"title",getArt.artname[i]);
-		sampleSolrInstance.addField(thisDoc,"text",getArt.description[i]);
+		thisDoc = sampleSolrInstance.addField(thisDoc,"id",getArt.artID[i]);
+		thisDoc = sampleSolrInstance.addField(thisDoc,"title",getArt.artname[i]);
+		thisDoc = sampleSolrInstance.addField(thisDoc,"text",getArt.description[i]);
 		sampleSolrInstance.add(thisDoc);
 	}
 	
@@ -20,8 +20,8 @@ FROM art
 	myFile = expandPath("NRRcreditsbyartist.pdf");
 	fmap = structNew();
 	fmap.title = "title";
-	fmap.content = "content";
-	sampleSolrInstance.addFile("file-1",myFile,fmap);
+	fmap.content = "text";
+	sampleSolrInstance.addFile("file-1",myFile,fmap,true,"attr_");
 	
 	sampleSolrInstance.commit(); // do a final commit of our changes
 	sampleSolrInstance.optimize(); // since we're all done, optimize the index
