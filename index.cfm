@@ -22,7 +22,7 @@
 		<ul>
 			<li>components/</li>
 				<ul>
-					<li>This directory houses the CFSolrLib cfc. In your actual app, this cfc doesn't need to be accessable from the web.</li>
+					<li>This directory houses the CFSolrLib cfc. In your actual app, this cfc doesn't need to be accessible from the web.</li>
 				</ul>
 			<li>index.cfm</li>
 				<ul>
@@ -41,12 +41,12 @@
 					</ul>
 					<li>solr-server/work/Jetty_[...]/webapp/WEB-INF/lib</li>
 					<ul>
-						<li>This directory is normally created by the Jetty J2EE server using solr.war file. I've added in the neccessary Java files to support reading rich documents (Apache Tika/Solr Cell). These libraries can be found in the contrib/dataimporthandler directory in a standard Solr download, and need to be placed in the lib directory of your deployment.</li>
+						<li>This directory is normally created by the Jetty J2EE server using solr.war file. I've added in the necessary Java files to support reading rich documents (Apache Tika/Solr Cell). These libraries can be found in the contrib/dataimporthandler directory in a standard Solr download, and need to be placed in the lib directory of your deployment.</li>
 					</ul>
 				</ul>
 			<li>solrj-lib/</li>
 				<ul>
-					<li>A collection of the java files needed to run the SolrJ client library. These files are normally located in various places in the solr-server directory, but copied here for conviencnce.</li>
+					<li>A collection of the java files needed to run the SolrJ client library. These files are normally located in various places in the solr-server directory, but copied here for convenience.</li>
 				</ul>
 		</ul>
 		<p>In order to start the Solr server, you will need to run a command from the command line, inside the solr-server directory. Make sure you don't have another Solr server running, including the one built-in to CF9. If you are on Linux/OS X, you might need to run the command with sudo.</p>
@@ -55,7 +55,7 @@
 		</ul>
 		
 		<h2>Examples</h2>
-		<p>There are to basic examples, one for indexing content, and one for searching content. This is not a Solr tutorial, this just shows how to get your data in &amp; out using this CF library.</p>
+		<p>There are two basic examples, one for indexing content, and one for searching content. This is not a Solr tutorial, this just shows how to get your data in &amp; out using this CF library.</p>
 		
 		<ul>
 			<li><a href="indexExample.cfm">Indexing Example</a> (requires the CFArtGallery datasource)</li>
@@ -64,7 +64,7 @@
 		
 		<p>The point of the examples is the CF code, not the HTML that you'll see in the browser, so be sure to dig in!</p>
 		
-		<h2>Ways to share your appriciation</h2>
+		<h2>Ways to share your appreciation</h2>
 		<p>If you like this, or any of my other open-source projects, you're always welcome to take a peek at my <a href="http://www.amazon.com/wishlist/172M0XGIRQ2S8">Amazon Wish List</a>.</p>
 	</body>
 </html>
