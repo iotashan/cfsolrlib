@@ -20,7 +20,9 @@
 	<cfargument name="queueSize" required="false" type="numeric" default="100" hint="The buffer size before the documents are sent to the server">
 	<cfargument name="threadCount" required="false" type="numeric" default="5" hint="The number of background threads used to empty the queue">
 	<cfargument name="binaryEnabled" required="false" type="boolean" default="true" hint="Should we use the faster binary data transfer format?">
-
+	
+	<cfset var BinaryRequestWriter = "" />
+	
 	<cfset THIS.javaLoaderInstance = ARGUMENTS.javaloaderInstance />
 	<cfset THIS.host = ARGUMENTS.host />
 	<cfset THIS.port = ARGUMENTS.port />
@@ -52,15 +54,16 @@
 	<cfargument name="start" type="numeric" required="false" default="0" hint="Offset for results, starting with 0" />
 	<cfargument name="rows" type="numeric" required="false" default="20" hint="Number of rows you want returned" />
 	<cfargument name="params" type="array" required="false" default="#arrayNew(1)#" hint="An array of name value pairs of additional params. Values do not need to be only strings." />
-	
-	<cfset thisQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery").init(ARGUMENTS.q).setStart(ARGUMENTS.start).setRows(ARGUMENTS.rows) />
+	<cfset var thisQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery").init(ARGUMENTS.q).setStart(ARGUMENTS.start).setRows(ARGUMENTS.rows) />
+	<cfset var thisParam = "" />
+	<cfset var response = "" />
+	<cfset var ret = structNew() />
 	<cfloop array="#ARGUMENTS.params#" index="thisParam">
 		<cfset thisQuery.setParam(thisParam.name,thisParam.value)>
 	</cfloop>
 	
 	<!--- we do this instead of making the user call java functions, to work around a CF bug --->
 	<cfset response = THIS.solrQueryServer.query(thisQuery) />
-	<cfset ret = structNew() />
 	<cfset ret.results = response.getResults() / >
 	<cfset ret.spellCheck = response.getSpellCheckResponse() / >
 	
@@ -71,7 +74,8 @@
 	<cfargument name="doc" type="array" required="true" hint="An array of field objects, with name, value, and an optional boost attribute. {name:""Some Name"",value:""Some Value""[,boost:5]}" />
 	<cfargument name="docBoost" type="numeric" required="false" hint="Value of boost for this document." />
 	
-	<cfset thisDoc = THIS.javaLoaderInstance.create("org.apache.solr.common.SolrInputDocument").init() />
+	<cfset var thisDoc = THIS.javaLoaderInstance.create("org.apache.solr.common.SolrInputDocument").init() />
+	<cfset var thisParam = "" />
 	<cfif isDefined("ARGUMENTS.docBoost")>
 		<cfset thisDoc.setDocumentBoost(ARGUMENTS.docBoost) />
 	</cfif>
@@ -93,7 +97,7 @@
 	<cfargument name="value" required="true" hint="Value of your field." />
 	<cfargument name="boost" required="false" type="numeric" hint="An array to add your document field to." />
 	
-	<cfset thisField = structNew() />
+	<cfset var thisField = structNew() />
 	<cfset thisField.name = ARGUMENTS.name />
 	<cfset thisField.value = ARGUMENTS.value />
 	<cfif isDefined("ARGUMENTS.boost")>
@@ -112,7 +116,8 @@
 	<cfargument name="saveMetadata" required="false" type="boolean" default="true" hint="Store non-mapped metadata in dynamic fields" />
 	<cfargument name="metadataPrefix" required="false" type="string" default="attr_" hint="Metadata dynamic field prefix" />
 	
-	<cfset docRequest = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.request.ContentStreamUpdateRequest").init("/update/extract") />
+	<cfset var docRequest = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.request.ContentStreamUpdateRequest").init("/update/extract") />
+	<cfset var thisKey = "" />
 	<cfset docRequest.addFile(createObject("java","java.io.File").init(ARGUMENTS.file)) />
 	<cfset docRequest.setParam("literal.id",ARGUMENTS.id) />
 	<cfif ARGUMENTS.saveMetadata>
