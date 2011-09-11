@@ -53,21 +53,44 @@
 	<cfargument name="q" type="string" required="true" hint="Your query string" />
 	<cfargument name="start" type="numeric" required="false" default="0" hint="Offset for results, starting with 0" />
 	<cfargument name="rows" type="numeric" required="false" default="20" hint="Number of rows you want returned" />
-	<cfargument name="params" type="array" required="false" default="#arrayNew(1)#" hint="An array of name value pairs of additional params. Values do not need to be only strings." />
+	<cfargument name="params" type="struct" required="false" default="#structNew#" hint="A struct of data to add as params. The struct key will be used as the param name, and the value as the param's value. If you need to pass in multiple values, make the value an array of values." />
 	<cfset var thisQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery").init(ARGUMENTS.q).setStart(ARGUMENTS.start).setRows(ARGUMENTS.rows) />
 	<cfset var thisParam = "" />
 	<cfset var response = "" />
 	<cfset var ret = structNew() />
-	<cfloop array="#ARGUMENTS.params#" index="thisParam">
-		<cfset thisQuery.setParam(thisParam.name,thisParam.value)>
+	
+	<cfloop list="#structKeyList(ARGUMENTS.params)#" index="thisKey">
+		<cfif isArray(ARGUMENTS.params[thisKey])>
+			<cfset thisQuery.setParam(thisKey,javaCast("string[]",ARGUMENTS.params[thisKey])) />
+		<cfelseif isBoolean(ARGUMENTS.params[thisKey])>
+			<cfset thisQuery.setParam(thisKey,ARGUMENTS.params[thisKey]) />
+		<cfelse>
+			<cfset tempArray = arrayNew(1) />
+			<cfset arrayAppend(tempArray,ARGUMENTS.params[thisKey]) />
+			<cfset thisQuery.setParam(thisKey,javaCast("string[]",tempArray)) />
+		</cfif>
 	</cfloop>
 	
 	<!--- we do this instead of making the user call java functions, to work around a CF bug --->
 	<cfset response = THIS.solrQueryServer.query(thisQuery) />
 	<cfset ret.results = response.getResults() / >
-	<cfset ret.spellCheck = response.getSpellCheckResponse() / >
+	<cfset ret.spellCheck = response.getSpellCheckResponse() />
 	
 	<cfreturn duplicate(ret) /> <!--- duplicate clears out the case-sensitive structure --->
+</cffunction>
+
+<cffunction name="queryParam" access="public" output="false" returnType="array" hint="Creates a name/value pair and appends it to the array. This is a helper method for adding to your index.">
+	<cfargument name="paramArray" required="true" type="array" hint="An array to add your document field to." />
+	<cfargument name="name" required="true" type="string" hint="Name of your field." />
+	<cfargument name="value" required="true" type="any" hint="Value of your field." />
+	
+	<cfset var thisField = structNew() />
+	<cfset thisField.name = ARGUMENTS.name />
+	<cfset thisField.value = ARGUMENTS.value />
+	
+	<cfset arrayAppend(ARGUMENTS.paramArray,thisField) />
+	
+	<cfreturn ARGUMENTS.paramArray />
 </cffunction>
 
 <cffunction name="add" access="public" output="false" hint="Add a document to the Solr index">

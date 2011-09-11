@@ -19,8 +19,8 @@ FROM art
 	// example for indexing content from a rich file
 	myFile = expandPath("NRRcreditsbyartist.pdf");
 	fmap = structNew();
-	fmap.title = "title";
-	fmap.content = "text";
+	fmap["title"] = "title";
+	fmap["content"] = "text";
 	sampleSolrInstance.addFile("file-1",myFile,fmap,true,"attr_");
 	
 	sampleSolrInstance.commit(); // do a final commit of our changes
