@@ -62,7 +62,7 @@
 	<cfloop list="#structKeyList(ARGUMENTS.params)#" index="thisKey">
 		<cfif isArray(ARGUMENTS.params[thisKey])>
 			<cfset thisQuery.setParam(thisKey,javaCast("string[]",ARGUMENTS.params[thisKey])) />
-		<cfelseif isBoolean(ARGUMENTS.params[thisKey])>
+		<cfelseif isBoolean(ARGUMENTS.params[thisKey]) AND NOT isNumeric(ARGUMENTS.params[thisKey])>
 			<cfset thisQuery.setParam(thisKey,ARGUMENTS.params[thisKey]) />
 		<cfelse>
 			<cfset tempArray = arrayNew(1) />
