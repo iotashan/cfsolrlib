@@ -155,6 +155,7 @@
 	<cfargument name="saveMetadata" required="false" type="boolean" default="true" hint="Store non-mapped metadata in dynamic fields" />
 	<cfargument name="metadataPrefix" required="false" type="string" default="attr_" hint="Metadata dynamic field prefix" />
 	<cfargument name="literalData" required="false" type="struct" hint="A struct of data to add as literal fields. The struct key will be used as the field name, and the value as the field's value. NOTE: You cannot have a literal field with the same name as a metadata field.  Solr will throw an error if you attempt to override metadata with a literal field" />
+	<cfargument name="boost" required="false" type="struct" hint="A struct of boost values.  The struct key will be the field name to boost, and its value is the numeric boost value" />
 	<cfargument name="idFieldName" required="false" type="string" default="id" hint="The name of the unique id field in the Solr schema" />
 	<cfset var docRequest = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.request.ContentStreamUpdateRequest").init("/update/extract") />
 	<cfset var thisKey = "" />
@@ -166,6 +167,11 @@
 	<cfif isDefined("ARGUMENTS.fmap")>
 		<cfloop list="#structKeyList(ARGUMENTS.fmap)#" index="thisKey">
 			<cfset docRequest.setParam("fmap.#thisKey#",ARGUMENTS.fmap[thisKey]) />
+		</cfloop>
+	</cfif>
+	<cfif isDefined("ARGUMENTS.boost")>
+		<cfloop list="#structKeyList(ARGUMENTS.boost)#" index="thisKey">
+			<cfset docRequest.setParam("boost.#thisKey#",ARGUMENTS.boost[thisKey]) />
 		</cfloop>
 	</cfif>
 	<cfif isDefined("ARGUMENTS.literalData")>
