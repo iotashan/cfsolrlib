@@ -53,7 +53,7 @@
 	<cfargument name="q" type="string" required="true" hint="Your query string" />
 	<cfargument name="start" type="numeric" required="false" default="0" hint="Offset for results, starting with 0" />
 	<cfargument name="rows" type="numeric" required="false" default="20" hint="Number of rows you want returned" />
-	<cfargument name="params" type="struct" required="false" default="#structNew#" hint="A struct of data to add as params. The struct key will be used as the param name, and the value as the param's value. If you need to pass in multiple values, make the value an array of values." />
+	<cfargument name="params" type="struct" required="false" default="#structNew()#" hint="A struct of data to add as params. The struct key will be used as the param name, and the value as the param's value. If you need to pass in multiple values, make the value an array of values." />
 	<cfset var thisQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery").init(ARGUMENTS.q).setStart(ARGUMENTS.start).setRows(ARGUMENTS.rows) />
 	<cfset var thisParam = "" />
 	<cfset var response = "" />
