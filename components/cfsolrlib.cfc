@@ -82,6 +82,7 @@
 	<cfset ret.totalResults = response.getResults().getNumFound() / >
 	<cfif NOT isNull(response.getSpellCheckResponse())>
 		<cfset suggestions = response.getSpellCheckResponse().getSuggestions() />
+		<cfset ret.collatedSuggestion = response.getSpellCheckResponse().getCollatedResult() />
 		<cfset ret.spellCheck = arrayNew(1) />
 		<cfloop array="#suggestions#" index="iSuggestion">
 			<cfset thisSuggestion = structNew() />
