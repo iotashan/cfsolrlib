@@ -78,6 +78,7 @@
 	
 	<!--- we do this instead of making the user call java functions, to work around a CF bug --->
 	<cfset response = THIS.solrQueryServer.query(thisQuery) />
+	<cfset ret.highlighting = response.getHighlighting() />
 	<cfset ret.results = response.getResults() / >
 	<cfset ret.totalResults = response.getResults().getNumFound() / >
 	<cfif NOT isNull(response.getSpellCheckResponse())>
