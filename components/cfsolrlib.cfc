@@ -122,7 +122,7 @@
 	<cfset var thisDoc = THIS.javaLoaderInstance.create("org.apache.solr.common.SolrInputDocument").init() />
 	<cfset var thisParam = "" />
 	<cfif isDefined("ARGUMENTS.docBoost")>
-		<cfset thisDoc.setDocumentBoost(ARGUMENTS.docBoost) />
+		<cfset thisDoc.setDocumentBoost(javaCast("float",ARGUMENTS.docBoost)) />
 	</cfif>
 	
 	<cfloop array="#ARGUMENTS.doc#" index="thisParam">
