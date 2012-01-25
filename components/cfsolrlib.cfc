@@ -81,6 +81,7 @@
 	<cfset ret.highlighting = response.getHighlighting() />
 	<cfset ret.results = response.getResults() / >
 	<cfset ret.totalResults = response.getResults().getNumFound() / >
+	<cfset ret.qTime = response.getQTime() />
 	<cfif NOT isNull(response.getSpellCheckResponse())>
 		<cfset suggestions = response.getSpellCheckResponse().getSuggestions() />
 		<cfset ret.collatedSuggestion = response.getSpellCheckResponse().getCollatedResult() />
