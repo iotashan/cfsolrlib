@@ -33,10 +33,10 @@
 	
 	<cfscript>
 	// create an update server instance
-	THIS.solrUpdateServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.StreamingUpdateSolrServer").init(THIS.solrURL,THIS.queueSize,THIS.threadCount);
+	THIS.solrUpdateServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer").init(THIS.solrURL,THIS.queueSize,THIS.threadCount);
 	
 	// create a query server instance
-	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.CommonsHttpSolrServer").init(THIS.solrURL);
+	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpSolrServer").init(THIS.solrURL);
 	
 	// enable binary
 	if (ARGUMENTS.binaryEnabled) {
@@ -78,8 +78,10 @@
 	
 	<!--- we do this instead of making the user call java functions, to work around a CF bug --->
 	<cfset response = THIS.solrQueryServer.query(thisQuery) />
-	<cfset ret.results = response.getResults() / >
+    <cfset ret.results = response.getResults() / >
 	<cfset ret.totalResults = response.getResults().getNumFound() / >
+	
+	<!--- Spellchecker Response --->
 	<cfif NOT isNull(response.getSpellCheckResponse())>
 		<cfset suggestions = response.getSpellCheckResponse().getSuggestions() />
 		<cfset ret.collatedSuggestion = response.getSpellCheckResponse().getCollatedResult() />
@@ -96,8 +98,58 @@
 			<cfset arrayAppend(ret.spellCheck,thisSuggestion) />
 		</cfloop>
 	</cfif>
-	
-	<cfreturn duplicate(ret) /> <!--- duplicate clears out the case-sensitive structure --->
+    
+	<!--- Highlighting Response --->
+	<cfif NOT isNull(response.getHighlighting())>
+    	<cfloop array="#ret.results#" index="currentResult">
+        	<!--- ***"title" is used for the highlighting example.  Change "title" to the field your highlighting result will be in for your use.--->
+        	<cfset currentResult.highlightingResult = response.getHighlighting().get("#currentResult.get('id')#").get("title") />
+        </cfloop>
+    </cfif>
+    <cfreturn duplicate(ret) /> <!--- duplicate clears out the case-sensitive structure --->
+</cffunction>
+
+<cffunction name="getAutoSuggestResults" access="remote" returntype="any" output="false">
+    <cfargument name="term" type="string" required="no">
+        <cfif Len(trim(ARGUMENTS.term)) gt 0>
+        	<!--- Remove any leading spaces in the search term --->
+			<cfset ARGUMENTS.term = "#trim(ARGUMENTS.term)#">
+			<cfscript>
+                h = new http();
+                h.setMethod("get");
+                h.setURL("#THIS.solrURL#/suggest?q=#ARGUMENTS.term#");
+                local.suggestResponse = h.send().getPrefix().Filecontent;
+                if (isXML(local.suggestResponse)){
+					local.XMLResponse = XMLParse(local.suggestResponse);
+					local.wordList = "";
+					if (ArrayLen(XMLResponse.response.lst) gt 1 AND structKeyExists(XMLResponse.response.lst[2].lst, "lst")){
+						local.wordCount = ArrayLen(XMLResponse.response.lst[2].lst.lst);
+						For (j=1;j LTE local.wordCount; j=j+1){
+							if(j eq local.wordCount){
+								local.resultCount = XMLResponse.response.lst[2].lst.lst[j].int[1].XmlText;
+								local.resultList = arrayNew(1);
+								For (i=1;i LTE local.resultCount; i=i+1){
+									arrayAppend(local.resultList, local.wordList & XMLResponse.response.lst[2].lst.lst[j].arr.str[i].XmlText);
+								}
+							}else{
+								local.wordList = local.wordList & XMLResponse.response.lst[2].lst.lst[j].XMLAttributes.name & " ";
+							}
+						}
+						//sort results aphabetically
+						if (ArrayLen(local.resultList)){
+							ArraySort(local.resultList,"textnocase","asc");
+						}
+					}else{
+						local.resultList = "";
+					}
+                }else{
+                    local.resultList = "";
+                }
+            </cfscript>
+        <cfelse>
+        	<cfset local.resultList = "">
+        </cfif>
+        <cfreturn local.resultList />
 </cffunction>
 
 <cffunction name="queryParam" access="public" output="false" returnType="array" hint="Creates a name/value pair and appends it to the array. This is a helper method for adding to your index.">
@@ -163,8 +215,8 @@
 	<cfargument name="boost" required="false" type="struct" hint="A struct of boost values.  The struct key will be the field name to boost, and its value is the numeric boost value" />
 	<cfargument name="idFieldName" required="false" type="string" default="id" hint="The name of the unique id field in the Solr schema" />
 	<cfset var docRequest = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.request.ContentStreamUpdateRequest").init("/update/extract") />
-	<cfset var thisKey = "" />
-	<cfset docRequest.addFile(createObject("java","java.io.File").init(ARGUMENTS.file)) />
+    <cfset var thisKey = "" />
+	<cfset docRequest.addFile(createObject("java","java.io.File").init(ARGUMENTS.file),"application/octet-stream") />
 	<cfset docRequest.setParam("literal.#arguments.idFieldName#",ARGUMENTS.id) />
 	<cfif ARGUMENTS.saveMetadata>
 		<cfset docRequest.setParam("uprefix",metadataPrefix) />
