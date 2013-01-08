@@ -4,7 +4,7 @@
 	<cfscript>
 		// load libraries needed for solrj
 		var paths = arrayNew(1);
-		arrayAppend(paths,expandPath("solrj-lib/solr-solrj-4.0.0-BETA.jar"));
+		arrayAppend(paths,expandPath("solrj-lib/solr-solrj-4.0.0.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/commons-io-2.4.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/commons-codec-1.7.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/slf4j-api-1.6.6.jar"));
