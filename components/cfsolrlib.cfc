@@ -53,6 +53,7 @@
 	<cfargument name="q" type="string" required="true" hint="Your query string" />
 	<cfargument name="start" type="numeric" required="false" default="0" hint="Offset for results, starting with 0" />
 	<cfargument name="rows" type="numeric" required="false" default="20" hint="Number of rows you want returned" />
+    <cfargument name="highlightingField" type="string" required="false" hint="Name of the field used for the highlighting result" />
 	<cfargument name="params" type="struct" required="false" default="#structNew()#" hint="A struct of data to add as params. The struct key will be used as the param name, and the value as the param's value. If you need to pass in multiple values, make the value an array of values." />
 	<cfset var thisQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery").init(ARGUMENTS.q).setStart(ARGUMENTS.start).setRows(ARGUMENTS.rows) />
 	<cfset var thisParam = "" />
@@ -100,10 +101,9 @@
 	</cfif>
     
 	<!--- Highlighting Response --->
-	<cfif NOT isNull(response.getHighlighting())>
+	<cfif NOT isNull(response.getHighlighting()) AND structKeyExists(ARGUMENTS,"highlightingField")>
     	<cfloop array="#ret.results#" index="currentResult">
-        	<!--- ***"title" is used for the highlighting example.  Change "title" to the field your highlighting result will be in for your use.--->
-        	<cfset currentResult.highlightingResult = response.getHighlighting().get("#currentResult.get('id')#").get("title") />
+        	<cfset currentResult.highlightingResult = response.getHighlighting().get("#currentResult.get('id')#").get("#ARGUMENTS.highlightingField#") />
         </cfloop>
     </cfif>
     <cfreturn duplicate(ret) /> <!--- duplicate clears out the case-sensitive structure --->

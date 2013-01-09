@@ -1,7 +1,7 @@
 <cfset sampleSolrInstance = createObject("component","components.cfsolrlib").init(APPLICATION.javaloader,"localhost","8983","/solr") />
 <html>
 	<head>
-		<title>CFSolrLib 2.0</title>
+		<title>CFSolrLib 3.0</title>
 	</head>
 	<body>
 		<h2>Welcome to CFSolrLib</h2>
@@ -9,7 +9,7 @@
 		
 		<h2>Requirements</h2>
 		<p>
-			You need a few basic things to use CFSolrLib 2:<br/>
+			You need a few basic things to use CFSolrLib 3:<br/>
 			<ul>
 				<li>A Solr server, version 4.0 or greater. This was built &amp; tested with Solr 4.0. This library will not work with earlier versions of Solr.</li>
 				<li><a href="http://wiki.apache.org/solr/Solrj">SolrJ</a> - The Solr java client library and supporting java libraries.</li>

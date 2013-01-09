@@ -44,7 +44,7 @@ FROM art
 
 <html>
 	<head>
-		<title>CFSolrLib 2.0 | Indexing example</title>
+		<title>CFSolrLib 3.0 | Indexing example</title>
 	</head>
 	<body>
 		<h2>Indexing</h2>

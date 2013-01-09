@@ -8,5 +8,14 @@ $(function() {
     });
 });
 </script>
+
+<html>
+	<head>
+		<title>CFSolrLib 3.0 | Auto-Suggest example</title>
+	</head>
+	<body>
     
-Keyword: <input id="keyword" />
+		Keyword: <input id="keyword" />
+        
+    </body>
+</html>
