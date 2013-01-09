@@ -11,7 +11,7 @@
 	<cfset local.params["hl.fragmentsBuilder"] = "colored">
 	<cfset local.params["hl.boundaryScanner"] = "default">
 	<cfset local.params["hl.usePhraseHighlighter"] = true>
-    <cfset searchResponse = sampleSolrInstance.search(URL.q,0,100,local.params,,"title") />
+    <cfset searchResponse = sampleSolrInstance.search(URL.q,0,100,local.params,"title") />
 <cfelse>
     <cfset searchResponse = sampleSolrInstance.search(URL.q,0,100) />
 </cfif>
