@@ -10,7 +10,7 @@
 		arrayAppend(paths,expandPath("solrj-lib/slf4j-api-1.6.6.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/slf4j-jdk14-1.6.6.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/jcl-over-slf4j-1.6.6.jar"));
-		arrayAppend(paths,expandPath("solrj-lib/log4j-over-slf4j-1.6.6.jar"));
+		//arrayAppend(paths,expandPath("solrj-lib/log4j-over-slf4j-1.6.6.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/httpclient-4.2.1.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/httpcore-4.2.2.jar"));
 		arrayAppend(paths,expandPath("solrj-lib/httpmime-4.2.1.jar"));
