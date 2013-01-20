@@ -1,7 +1,7 @@
 <cfset sampleSolrInstance = createObject("component","components.cfsolrlib").init(APPLICATION.javaloader,"localhost","8983","/solr") />
 <html>
 	<head>
-		<title>CFSolrLib 2.0</title>
+		<title>CFSolrLib 3.0</title>
 	</head>
 	<body>
 		<h2>Welcome to CFSolrLib</h2>
@@ -9,9 +9,9 @@
 		
 		<h2>Requirements</h2>
 		<p>
-			You need a few basic things to use CFSolrLib 2:<br/>
+			You need a few basic things to use CFSolrLib 3:<br/>
 			<ul>
-				<li>A Solr server, version 3.1 or greater. This was built &amp; tested with Solr 3.2. This library will not work with earlier versions of Solr.</li>
+				<li>A Solr server, version 4.0 or greater. This was built &amp; tested with Solr 4.0. This library will not work with earlier versions of Solr.</li>
 				<li><a href="http://wiki.apache.org/solr/Solrj">SolrJ</a> - The Solr java client library and supporting java libraries.</li>
 				<li>Mark Mandel's <a href="http://www.compoundtheory.com/?action=javaloader.index">JavaLoader</a>, to load SolrJ.</li>
 			</ul>
@@ -34,12 +34,12 @@
 				</ul>
 			<li>solr-server/</li>
 				<ul>
-					<li>A copy of Solr 3.2 "example" directory.</li>
-					<li>solr-server/solr/conf/schema.xml</li>
+					<li>A copy of Solr 4.0 "example" directory.</li>
+					<li>solr-server/solr/collection1/conf/schema.xml</li>
 					<ul>
 						<li>This schema file has been simplified for the examples.</li>
 					</ul>
-					<li>solr-server/work/Jetty_[...]/webapp/WEB-INF/lib</li>
+					<li>solr-server/solr-webapp/webapp/WEB-INF/lib</li>
 					<ul>
 						<li>This directory is normally created by the Jetty J2EE server using solr.war file. I've added in the necessary Java files to support reading rich documents (Apache Tika/Solr Cell). These libraries can be found in the contrib/dataimporthandler directory in a standard Solr download, and need to be placed in the lib directory of your deployment.</li>
 					</ul>
@@ -60,6 +60,7 @@
 		<ul>
 			<li><a href="indexExample.cfm">Indexing Example</a> (requires the CFArtGallery datasource)</li>
 			<li><a href="searchExample.cfm">Search Example</a></li>
+            <li><a href="autoSuggestExample.cfm">Auto Suggest Example</a> (Shows how to use JQuery Autocomplete with Solr)
 		</ul>
 		
 		<p>The point of the examples is the CF code, not the HTML that you'll see in the browser, so be sure to dig in!</p>
