@@ -60,6 +60,7 @@
 		<ul>
 			<li><a href="indexExample.cfm">Indexing Example</a> (requires the CFArtGallery datasource)</li>
 			<li><a href="searchExample.cfm">Search Example</a></li>
+            <li><a href="autoSuggestExample.cfm">Auto Suggest Example</a> (Shows how to use JQuery Autocomplete with Solr)
 		</ul>
 		
 		<p>The point of the examples is the CF code, not the HTML that you'll see in the browser, so be sure to dig in!</p>

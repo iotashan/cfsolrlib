@@ -11,7 +11,7 @@
 	<cfset local.params["hl.fragmentsBuilder"] = "colored">
 	<cfset local.params["hl.boundaryScanner"] = "default">
 	<cfset local.params["hl.usePhraseHighlighter"] = true>
-    <cfset searchResponse = sampleSolrInstance.search(URL.q,0,100,local.params,"title") />
+    <cfset searchResponse = sampleSolrInstance.search(URL.q,0,100,"title",local.params) />
 <cfelse>
     <cfset searchResponse = sampleSolrInstance.search(URL.q,0,100) />
 </cfif>
@@ -23,7 +23,8 @@
 	</head>
 	<body>
 		<h2>Search Example</h2>
-		<p>Here is a simple search example.</p>
+		<p>Here is a simple search example.<br>
+        When using highlighting, the highlighting will appear on the "Title" field.</p>
 		<form action="" method="GET">
 			Search: <input name="q" value="#URL.q#" /><br />
             Enable Highlighting: <input name="enableHighlighting" type="checkbox" /><br />
@@ -31,8 +32,8 @@
 			Other Search Examples: <a href="searchExample.cfm?q=*:*">*:*</a> | <a href="searchExample.cfm?q=Charcoal">Charcoal</a> | <a href="searchExample.cfm?q=Media">Media</a>
 		</form>
 		<p>
-				<cfloop array="#searchResponse.results#" index="currentResult">
-					<strong>ID:</strong> #currentResult.id# <strong>TITLE:</strong> #currentResult.title#<br/>
+                <cfloop array="#searchResponse.results#" index="currentResult">
+                	<strong>ID:</strong> #currentResult.id# <strong>TITLE:</strong> #currentResult.title#<br/>
                     <cfif structKeyExists(url,"enableHighlighting")>
                     	<strong>HIGHLIGHTING:</strong> <cfif structKeyExists(currentResult,"highlightingResult")>#currentResult.highlightingResult[1]#</cfif><br/>
                     </cfif>
