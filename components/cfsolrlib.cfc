@@ -49,6 +49,61 @@
 	<cfreturn this/>
 </cffunction>
 
+<cffunction name="checkForCore" access="public" output="false" hint="Multicore method. Checks for existance of a Solr core by name">
+	<cfargument name="coreName" type="string" required="true" hint="Solr core name" />
+    
+    <cfscript>
+		h = new http();
+		h.setMethod("get");
+		h.setURL("#THIS.solrURL#/#ARGUMENTS.coreName#/admin/ping");
+		pingResponse = h.send().getPrefix().statusCode;
+		coreCheckResponse = structNew();
+		if (pingResponse eq "200 OK"){
+			coreCheckResponse.success = true;
+			coreCheckResponse.statusCode = pingResponse;
+			return coreCheckResponse;
+		}else{
+			coreCheckResponse.success = false;
+			coreCheckResponse.statusCode = pingResponse;
+			return coreCheckResponse;
+		}
+	</cfscript>
+</cffunction>
+
+<cffunction name="createNewCore" access="public" output="false" hint="Multicore method. Creates new Solr core" returntype="struct">
+	<cfargument name="coreName" type="string" required="true" hint="New Solr core name" />
+    <cfargument name="instanceDir" type="string" required="true" hint="Location of folder containing config and schema files" />
+    <cfargument name="dataDir" type="string" required="false" hint="Location to store core's index data" />
+    <cfargument name="configName" type="string" required="false" hint="Name of config file" />
+    <cfargument name="schemaName" type="string" required="false" hint="Name of schema file" />
+    
+    <cfscript>
+		URLString = "#THIS.host#:#THIS.port#/solr/admin/cores?action=CREATE&name=#ARGUMENTS.coreName#&instanceDir=#instanceDir#";
+		if (structKeyExists(ARGUMENTS, "dataDir")){
+			URLString = "#URLString#&dataDir=#ARGUMENTS.dataDir#";
+		}
+		if (structKeyExists(ARGUMENTS, "configName")){
+			URLString = "#URLString#&config=#ARGUMENTS.configName#";
+		}
+		if (structKeyExists(ARGUMENTS, "schemaName")){
+			URLString = "#URLString#&schema=#ARGUMENTS.schemaName#";
+		}
+		newCoreRequest = new http();
+		newCoreRequest.setMethod("get");
+		newCoreRequest.setURL("#URLString#");
+		response = newCoreRequest.send().getPrefix();
+		coreCreationResponse = structNew();
+		if (response.statusCode eq "200 OK"){
+			coreCreationResponse.success = true;
+			return coreCreationResponse;
+		}else{
+			coreCreationResponse.success = false;
+			coreCreationResponse.message = response.ErrorDetail;
+			return coreCreationResponse;
+		}
+	</cfscript>
+</cffunction>
+
 <cffunction name="search" access="public" output="false" hint="Search for documents in the Solr index">
 	<cfargument name="q" type="string" required="true" hint="Your query string" />
 	<cfargument name="start" type="numeric" required="false" default="0" hint="Offset for results, starting with 0" />
