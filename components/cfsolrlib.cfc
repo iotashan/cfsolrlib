@@ -136,6 +136,7 @@
 	<cfset response = THIS.solrQueryServer.query(thisQuery) />
     <cfset ret.results = response.getResults() / >
 	<cfset ret.totalResults = response.getResults().getNumFound() / >
+    <cfset ret.qTime = response.getQTime() />
 	
 	<!--- Spellchecker Response --->
 	<cfif NOT isNull(response.getSpellCheckResponse())>
