@@ -53,6 +53,10 @@
 		<ul>
 			<li><strong>java -jar start.jar</strong></li>
 		</ul>
+        <p>To start the Solr server in multicore mode, you will need to define the Solr home in the command line by adding an additional parameter.</p>
+        <ul>
+        	<li><strong>java -Dsolr.solr.home=multicore -jar start.jar</strong></li>
+        </ul>
 		
 		<h2>Examples</h2>
 		<p>There are two basic examples, one for indexing content, and one for searching content. This is not a Solr tutorial, this just shows how to get your data in &amp; out using this CF library.</p>
@@ -61,6 +65,7 @@
 			<li><a href="indexExample.cfm">Indexing Example</a> (requires the CFArtGallery datasource)</li>
 			<li><a href="searchExample.cfm">Search Example</a></li>
             <li><a href="autoSuggestExample.cfm">Auto Suggest Example</a> (Shows how to use JQuery Autocomplete with Solr)
+            <li><a href="coreCreationExample.cfm">New Core Example</a> (Shows how to create new cores dynamically in multicore mode)
 		</ul>
 		
 		<p>The point of the examples is the CF code, not the HTML that you'll see in the browser, so be sure to dig in!</p>
