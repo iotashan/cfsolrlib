@@ -78,8 +78,10 @@
 	
 	<!--- we do this instead of making the user call java functions, to work around a CF bug --->
 	<cfset response = THIS.solrQueryServer.query(thisQuery) />
+	<cfset ret.highlighting = response.getHighlighting() />
 	<cfset ret.results = response.getResults() / >
 	<cfset ret.totalResults = response.getResults().getNumFound() / >
+	<cfset ret.qTime = response.getQTime() />
 	<cfif NOT isNull(response.getSpellCheckResponse())>
 		<cfset suggestions = response.getSpellCheckResponse().getSuggestions() />
 		<cfset ret.collatedSuggestion = response.getSpellCheckResponse().getCollatedResult() />
@@ -121,7 +123,7 @@
 	<cfset var thisDoc = THIS.javaLoaderInstance.create("org.apache.solr.common.SolrInputDocument").init() />
 	<cfset var thisParam = "" />
 	<cfif isDefined("ARGUMENTS.docBoost")>
-		<cfset thisDoc.setDocumentBoost(ARGUMENTS.docBoost) />
+		<cfset thisDoc.setDocumentBoost(javaCast("float",ARGUMENTS.docBoost)) />
 	</cfif>
 	
 	<cfloop array="#ARGUMENTS.doc#" index="thisParam">
