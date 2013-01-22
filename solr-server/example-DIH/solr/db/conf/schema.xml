@@ -224,7 +224,7 @@
              See the Java Regular Expression documentation for more
              infomation on pattern and replacement string syntax.
              
-             http://java.sun.com/j2se/1.5.0/docs/api/java/util/regex/package-summary.html
+             http://java.sun.com/j2se/1.6.0/docs/api/java/util/regex/package-summary.html
           -->
         <filter class="solr.PatternReplaceFilterFactory"
                 pattern="([^a-z])" replacement="" replace="all"
@@ -259,7 +259,7 @@
        best performance.
    -->
 
-   <field name="id" type="string" indexed="true" stored="true" required="true" /> 
+   <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" /> 
    <field name="sku" type="textTight" indexed="true" stored="true" omitNorms="true"/>
    <field name="name" type="text" indexed="true" stored="true"/>
    <field name="nameSort" type="string" indexed="true" stored="false"/>
@@ -354,6 +354,6 @@
  <!-- Similarity is the scoring routine for each document vs. a query.
       A custom similarity may be specified here, but the default is fine
       for most applications.  -->
- <!-- <similarity class="org.apache.lucene.search.DefaultSimilarity"/> -->
+ <!-- <similarity class="org.apache.lucene.search.similarities.DefaultSimilarity"/> -->
 
 </schema>
