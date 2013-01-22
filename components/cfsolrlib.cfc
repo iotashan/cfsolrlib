@@ -33,10 +33,10 @@
 	
 	<cfscript>
 	// create an update server instance
-	THIS.solrUpdateServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.StreamingUpdateSolrServer").init(THIS.solrURL,THIS.queueSize,THIS.threadCount);
+	THIS.solrUpdateServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer").init(THIS.solrURL,THIS.queueSize,THIS.threadCount);
 	
 	// create a query server instance
-	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.CommonsHttpSolrServer").init(THIS.solrURL);
+	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpSolrServer").init(THIS.solrURL);
 	
 	// enable binary
 	if (ARGUMENTS.binaryEnabled) {
@@ -49,10 +49,66 @@
 	<cfreturn this/>
 </cffunction>
 
+<cffunction name="checkForCore" access="public" output="false" hint="Multicore method. Checks for existance of a Solr core by name">
+	<cfargument name="coreName" type="string" required="true" hint="Solr core name" />
+    
+    <cfscript>
+		h = new http();
+		h.setMethod("get");
+		h.setURL("#THIS.solrURL#/#ARGUMENTS.coreName#/admin/ping");
+		pingResponse = h.send().getPrefix().statusCode;
+		coreCheckResponse = structNew();
+		if (pingResponse eq "200 OK"){
+			coreCheckResponse.success = true;
+			coreCheckResponse.statusCode = pingResponse;
+			return coreCheckResponse;
+		}else{
+			coreCheckResponse.success = false;
+			coreCheckResponse.statusCode = pingResponse;
+			return coreCheckResponse;
+		}
+	</cfscript>
+</cffunction>
+
+<cffunction name="createNewCore" access="public" output="false" hint="Multicore method. Creates new Solr core" returntype="struct">
+	<cfargument name="coreName" type="string" required="true" hint="New Solr core name" />
+    <cfargument name="instanceDir" type="string" required="true" hint="Location of folder containing config and schema files" />
+    <cfargument name="dataDir" type="string" required="false" hint="Location to store core's index data" />
+    <cfargument name="configName" type="string" required="false" hint="Name of config file" />
+    <cfargument name="schemaName" type="string" required="false" hint="Name of schema file" />
+    
+    <cfscript>
+		URLString = "#THIS.host#:#THIS.port#/solr/admin/cores?action=CREATE&name=#ARGUMENTS.coreName#&instanceDir=#instanceDir#";
+		if (structKeyExists(ARGUMENTS, "dataDir")){
+			URLString = "#URLString#&dataDir=#ARGUMENTS.dataDir#";
+		}
+		if (structKeyExists(ARGUMENTS, "configName")){
+			URLString = "#URLString#&config=#ARGUMENTS.configName#";
+		}
+		if (structKeyExists(ARGUMENTS, "schemaName")){
+			URLString = "#URLString#&schema=#ARGUMENTS.schemaName#";
+		}
+		newCoreRequest = new http();
+		newCoreRequest.setMethod("get");
+		newCoreRequest.setURL("#URLString#");
+		response = newCoreRequest.send().getPrefix();
+		coreCreationResponse = structNew();
+		if (response.statusCode eq "200 OK"){
+			coreCreationResponse.success = true;
+			return coreCreationResponse;
+		}else{
+			coreCreationResponse.success = false;
+			coreCreationResponse.message = response.ErrorDetail;
+			return coreCreationResponse;
+		}
+	</cfscript>
+</cffunction>
+
 <cffunction name="search" access="public" output="false" hint="Search for documents in the Solr index">
 	<cfargument name="q" type="string" required="true" hint="Your query string" />
 	<cfargument name="start" type="numeric" required="false" default="0" hint="Offset for results, starting with 0" />
 	<cfargument name="rows" type="numeric" required="false" default="20" hint="Number of rows you want returned" />
+    <cfargument name="highlightingField" type="string" required="false" hint="Name of the field used for the highlighting result" />
 	<cfargument name="params" type="struct" required="false" default="#structNew()#" hint="A struct of data to add as params. The struct key will be used as the param name, and the value as the param's value. If you need to pass in multiple values, make the value an array of values." />
 	<cfset var thisQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery").init(ARGUMENTS.q).setStart(ARGUMENTS.start).setRows(ARGUMENTS.rows) />
 	<cfset var thisParam = "" />
@@ -78,10 +134,11 @@
 	
 	<!--- we do this instead of making the user call java functions, to work around a CF bug --->
 	<cfset response = THIS.solrQueryServer.query(thisQuery) />
-	<cfset ret.highlighting = response.getHighlighting() />
-	<cfset ret.results = response.getResults() / >
+    <cfset ret.results = response.getResults() / >
 	<cfset ret.totalResults = response.getResults().getNumFound() / >
-	<cfset ret.qTime = response.getQTime() />
+    <cfset ret.qTime = response.getQTime() />
+	
+	<!--- Spellchecker Response --->
 	<cfif NOT isNull(response.getSpellCheckResponse())>
 		<cfset suggestions = response.getSpellCheckResponse().getSuggestions() />
 		<cfset ret.collatedSuggestion = response.getSpellCheckResponse().getCollatedResult() />
@@ -98,8 +155,57 @@
 			<cfset arrayAppend(ret.spellCheck,thisSuggestion) />
 		</cfloop>
 	</cfif>
-	
-	<cfreturn duplicate(ret) /> <!--- duplicate clears out the case-sensitive structure --->
+    
+	<!--- Highlighting Response --->
+	<cfif NOT isNull(response.getHighlighting()) AND structKeyExists(ARGUMENTS,"highlightingField")>
+    	<cfloop array="#ret.results#" index="currentResult">
+        	<cfset currentResult.highlightingResult = response.getHighlighting().get("#currentResult.get('id')#").get("#ARGUMENTS.highlightingField#") />
+        </cfloop>
+    </cfif>
+    <cfreturn duplicate(ret) /> <!--- duplicate clears out the case-sensitive structure --->
+</cffunction>
+
+<cffunction name="getAutoSuggestResults" access="remote" returntype="any" output="false">
+    <cfargument name="term" type="string" required="no">
+        <cfif Len(trim(ARGUMENTS.term)) gt 0>
+        	<!--- Remove any leading spaces in the search term --->
+			<cfset ARGUMENTS.term = "#trim(ARGUMENTS.term)#">
+			<cfscript>
+                h = new http();
+                h.setMethod("get");
+                h.setURL("#THIS.solrURL#/suggest?q=#ARGUMENTS.term#");
+                local.suggestResponse = h.send().getPrefix().Filecontent;
+                if (isXML(local.suggestResponse)){
+					local.XMLResponse = XMLParse(local.suggestResponse);
+					local.wordList = "";
+					if (ArrayLen(XMLResponse.response.lst) gt 1 AND structKeyExists(XMLResponse.response.lst[2].lst, "lst")){
+						local.wordCount = ArrayLen(XMLResponse.response.lst[2].lst.lst);
+						For (j=1;j LTE local.wordCount; j=j+1){
+							if(j eq local.wordCount){
+								local.resultCount = XMLResponse.response.lst[2].lst.lst[j].int[1].XmlText;
+								local.resultList = arrayNew(1);
+								For (i=1;i LTE local.resultCount; i=i+1){
+									arrayAppend(local.resultList, local.wordList & XMLResponse.response.lst[2].lst.lst[j].arr.str[i].XmlText);
+								}
+							}else{
+								local.wordList = local.wordList & XMLResponse.response.lst[2].lst.lst[j].XMLAttributes.name & " ";
+							}
+						}
+						//sort results aphabetically
+						if (ArrayLen(local.resultList)){
+							ArraySort(local.resultList,"textnocase","asc");
+						}
+					}else{
+						local.resultList = "";
+					}
+                }else{
+                    local.resultList = "";
+                }
+            </cfscript>
+        <cfelse>
+        	<cfset local.resultList = "">
+        </cfif>
+        <cfreturn local.resultList />
 </cffunction>
 
 <cffunction name="queryParam" access="public" output="false" returnType="array" hint="Creates a name/value pair and appends it to the array. This is a helper method for adding to your index.">
@@ -123,7 +229,7 @@
 	<cfset var thisDoc = THIS.javaLoaderInstance.create("org.apache.solr.common.SolrInputDocument").init() />
 	<cfset var thisParam = "" />
 	<cfif isDefined("ARGUMENTS.docBoost")>
-		<cfset thisDoc.setDocumentBoost(javaCast("float",ARGUMENTS.docBoost)) />
+		<cfset thisDoc.setDocumentBoost(ARGUMENTS.docBoost) />
 	</cfif>
 	
 	<cfloop array="#ARGUMENTS.doc#" index="thisParam">
@@ -165,8 +271,8 @@
 	<cfargument name="boost" required="false" type="struct" hint="A struct of boost values.  The struct key will be the field name to boost, and its value is the numeric boost value" />
 	<cfargument name="idFieldName" required="false" type="string" default="id" hint="The name of the unique id field in the Solr schema" />
 	<cfset var docRequest = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.request.ContentStreamUpdateRequest").init("/update/extract") />
-	<cfset var thisKey = "" />
-	<cfset docRequest.addFile(createObject("java","java.io.File").init(ARGUMENTS.file)) />
+    <cfset var thisKey = "" />
+	<cfset docRequest.addFile(createObject("java","java.io.File").init(ARGUMENTS.file),"application/octet-stream") />
 	<cfset docRequest.setParam("literal.#arguments.idFieldName#",ARGUMENTS.id) />
 	<cfif ARGUMENTS.saveMetadata>
 		<cfset docRequest.setParam("uprefix",metadataPrefix) />
