@@ -29,11 +29,7 @@
 	<cfset THIS.host = ARGUMENTS.host />
 	<cfset THIS.port = ARGUMENTS.port />
 	<cfset THIS.path = ARGUMENTS.path />
-	<cfset THIS.solrURL = "http://" />
-	<cfif structKeyExists(arguments, "username") and structKeyExists(arguments, "password") >
-		<cfset THIS.solrURL &= "#urlEncodedFormat(arguments.username)#:#urlEncodedFormat(arguments.password)#@" />
-	</cfif>
-	<cfset THIS.solrURL &= "#THIS.host#:#THIS.port##THIS.path#" />
+	<cfset THIS.solrURL = "http://#THIS.host#:#THIS.port##THIS.path#" />
 	<cfset THIS.queueSize = ARGUMENTS.queueSize />
 	<cfset THIS.threadCount = ARGUMENTS.threadCount />
 	
@@ -43,6 +39,16 @@
 	
 	// create a query server instance
 	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpSolrServer").init(THIS.solrURL);
+	
+	if ( structKeyExists(arguments, "username") and structKeyExists(arguments, "password") ) {
+		// set up basic authentication
+		THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpClientUtil")
+			.setBasicAuth(
+				THIS.solrQueryServer.getHttpClient(),
+				arguments.username,
+				arguments.password
+			);		
+	}
 	
 	// enable binary
 	if (ARGUMENTS.binaryEnabled) {
