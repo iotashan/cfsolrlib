@@ -15,6 +15,8 @@
 <cffunction name="init" access="public" output="false" returntype="CFSolrLib">
 	<cfargument name="javaloaderInstance" required="true" hint="An instance of JavaLoader." />
 	<cfargument name="host" required="true" type="string" default="localhost" hint="Solr Server host" />
+	<cfargument name="username" required="false" type="string" hint="HTTP Basic Authentication Username" />
+	<cfargument name="password" required="false" type="string" hint="HTTP Basic Authentication Password" />
 	<cfargument name="port" required="false" type="numeric" default="8983" hint="Port Solr server is running on" />
 	<cfargument name="path" required="false" type="string" default="/solr" hint="Path to solr instance">
 	<cfargument name="queueSize" required="false" type="numeric" default="100" hint="The buffer size before the documents are sent to the server">
@@ -27,7 +29,11 @@
 	<cfset THIS.host = ARGUMENTS.host />
 	<cfset THIS.port = ARGUMENTS.port />
 	<cfset THIS.path = ARGUMENTS.path />
-	<cfset THIS.solrURL = "http://#THIS.host#:#THIS.port##THIS.path#" />
+	<cfset THIS.solrURL = "http://" />
+	<cfif structKeyExists(arguments, "username") and structKeyExists(arguments, "password") >
+		<cfset THIS.solrURL &= "#urlEncodedFormat(arguments.username)#:#urlEncodedFormat(arguments.password)#@" />
+	</cfif>
+	<cfset THIS.solrURL &= "#THIS.host#:#THIS.port##THIS.path#" />
 	<cfset THIS.queueSize = ARGUMENTS.queueSize />
 	<cfset THIS.threadCount = ARGUMENTS.threadCount />
 	
