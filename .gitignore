@@ -4,3 +4,4 @@
 
 .DS_Store
 solr-server/solr/data/index
+solr-server/solr/collection1/data/tlog/
