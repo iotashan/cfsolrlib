@@ -15,6 +15,8 @@
 <cffunction name="init" access="public" output="false" returntype="CFSolrLib">
 	<cfargument name="javaloaderInstance" required="true" hint="An instance of JavaLoader." />
 	<cfargument name="host" required="true" type="string" default="localhost" hint="Solr Server host" />
+	<cfargument name="username" required="false" type="string" hint="HTTP Basic Authentication Username" />
+	<cfargument name="password" required="false" type="string" hint="HTTP Basic Authentication Password" />
 	<cfargument name="port" required="false" type="numeric" default="8983" hint="Port Solr server is running on" />
 	<cfargument name="path" required="false" type="string" default="/solr" hint="Path to solr instance">
 	<cfargument name="queueSize" required="false" type="numeric" default="100" hint="The buffer size before the documents are sent to the server">
@@ -37,6 +39,16 @@
 	
 	// create a query server instance
 	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpSolrServer").init(THIS.solrURL);
+	
+	if ( structKeyExists(arguments, "username") and structKeyExists(arguments, "password") ) {
+		// set up basic authentication
+		THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpClientUtil")
+			.setBasicAuth(
+				THIS.solrQueryServer.getHttpClient(),
+				arguments.username,
+				arguments.password
+			);		
+	}
 	
 	// enable binary
 	if (ARGUMENTS.binaryEnabled) {
