@@ -1,8 +1,10 @@
 <cfset sampleSolrInstance = createObject("component","components.cfsolrlib").init(APPLICATION.javaloader,"localhost","8983","/solr") />
 
 <cfquery name="getArt" datasource="cfartgallery">
-SELECT artID, artname, description
-FROM art
+	SELECT artID, artname, description, firstName, lastName, isSold
+	FROM art
+		LEFT JOIN artists
+			ON art.artistId = artists.artistId
 </cfquery>
 
 <cfscript>
@@ -11,7 +13,10 @@ FROM art
 		thisDoc = arrayNew(1);
 		thisDoc = sampleSolrInstance.addField(thisDoc,"id",getArt.artID[i]);
 		thisDoc = sampleSolrInstance.addField(thisDoc,"title",getArt.artname[i]);
-		thisDoc = sampleSolrInstance.addField(thisDoc,"description",getArt.description[i]);
+		thisDoc = sampleSolrInstance.addField(thisDoc,"cat",trim(getArt.description[i]));
+		thisFullname = trim(getArt.firstName[i]&" "&getArt.lastName[i]);
+		thisDoc = sampleSolrInstance.addField(thisDoc,"author",thisFullname);
+		thisDoc = sampleSolrInstance.addField(thisDoc,"availability_s",iif(getArt.isSold[i] EQ 1,DE("Sold"),DE("Available")));
 		sampleSolrInstance.add(thisDoc);
 	}
 	
