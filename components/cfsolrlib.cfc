@@ -15,6 +15,8 @@
 <cffunction name="init" access="public" output="false" returntype="CFSolrLib">
 	<cfargument name="javaloaderInstance" required="true" hint="An instance of JavaLoader." />
 	<cfargument name="host" required="true" type="string" default="localhost" hint="Solr Server host" />
+	<cfargument name="username" required="false" type="string" hint="HTTP Basic Authentication Username" />
+	<cfargument name="password" required="false" type="string" hint="HTTP Basic Authentication Password" />
 	<cfargument name="port" required="false" type="numeric" default="8983" hint="Port Solr server is running on" />
 	<cfargument name="path" required="false" type="string" default="/solr" hint="Path to solr instance">
 	<cfargument name="queueSize" required="false" type="numeric" default="100" hint="The buffer size before the documents are sent to the server">
@@ -37,6 +39,16 @@
 	
 	// create a query server instance
 	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpSolrServer").init(THIS.solrURL);
+	
+	if ( structKeyExists(arguments, "username") and structKeyExists(arguments, "password") ) {
+		// set up basic authentication
+		THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpClientUtil")
+			.setBasicAuth(
+				THIS.solrQueryServer.getHttpClient(),
+				arguments.username,
+				arguments.password
+			);		
+	}
 	
 	// enable binary
 	if (ARGUMENTS.binaryEnabled) {
@@ -110,6 +122,9 @@
 	<cfargument name="rows" type="numeric" required="false" default="20" hint="Number of rows you want returned" />
     <cfargument name="highlightingField" type="string" required="false" hint="Name of the field used for the highlighting result" />
 	<cfargument name="params" type="struct" required="false" default="#structNew()#" hint="A struct of data to add as params. The struct key will be used as the param name, and the value as the param's value. If you need to pass in multiple values, make the value an array of values." />
+	<cfargument name="facetFields" type="array" required="false" default="#arrayNew(1)#" hint="An array of fields to facet." />
+	<cfargument name="facetMinCount" type="numeric" required="false" default="1" hint="Minimum number of results to return a facet." />
+	<cfargument name="facetFilters" type="array" required="false" default="#arrayNew(1)#" hint="An array of facet filters." />
 	<cfset var thisQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery").init(ARGUMENTS.q).setStart(ARGUMENTS.start).setRows(ARGUMENTS.rows) />
 	<cfset var thisParam = "" />
 	<cfset var response = "" />
@@ -119,6 +134,16 @@
 	<cfset var suggestions = "" />
 	<cfset var thisSuggestion = "" />
 	<cfset var iSuggestion = "" />
+
+	<cfif NOT arrayIsEmpty(ARGUMENTS.facetFields)>
+		<cfset thisQuery.setFacet(true)>
+		<cfset thisQuery.addFacetField(javaCast("string[]",facetFields))>
+		<cfset thisQuery.setFacetMinCount(ARGUMENTS.facetMinCount)>
+	</cfif>
+
+	<cfif NOT arrayIsEmpty(ARGUMENTS.facetFilters)>
+		<cfset thisQuery.addFilterQuery(javaCast("string[]",ARGUMENTS.facetFilters))>
+	</cfif>
 	
 	<cfloop list="#structKeyList(ARGUMENTS.params)#" index="thisKey">
 		<cfif isArray(ARGUMENTS.params[thisKey])>
@@ -162,6 +187,11 @@
         	<cfset currentResult.highlightingResult = response.getHighlighting().get("#currentResult.get('id')#").get("#ARGUMENTS.highlightingField#") />
         </cfloop>
     </cfif>
+
+    <cfif NOT isNull(response.getFacetFields())>
+		<cfset ret.facetFields = arrayNew(1)>
+		<cfset ret.facetFields = response.getFacetFields()>
+	</cfif>
     <cfreturn duplicate(ret) /> <!--- duplicate clears out the case-sensitive structure --->
 </cffunction>
 
