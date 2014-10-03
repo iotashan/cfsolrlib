@@ -145,6 +145,16 @@
 		<cfset thisQuery.addFilterQuery(javaCast("string[]",ARGUMENTS.facetFilters))>
 	</cfif>
 	
+	<cfif structKeyExists(arguments.params, "group") and arguments.params.group is true >
+	<!--- Grouped query results are in a completely different format from standard
+		queries; however, adding the following params produces a standard format.
+		* https://wiki.apache.org/solr/FieldCollapsing
+		* http://lucene.472066.n3.nabble.com/SolrQuery-API-for-adding-group-filter-tp2921539p2923180.html
+	 --->
+		<cfset arguments.params["group.format"] = "simple" />
+		<cfset arguments.params["group.main"] = true />
+	</cfif>
+	
 	<cfloop list="#structKeyList(ARGUMENTS.params)#" index="thisKey">
 		<cfif isArray(ARGUMENTS.params[thisKey])>
 			<cfset thisQuery.setParam(thisKey,javaCast("string[]",ARGUMENTS.params[thisKey])) />
