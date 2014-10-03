@@ -6,6 +6,10 @@
 	THIS.solrURL = "http://#THIS.host#:#THIS.port##THIS.path#";
 	THIS.queueSize = 100;
 	THIS.threadCount = 5;
+	THIS.username = "";
+	THIS.password = "";
+	THIS.isAccessAuthenticated = false;
+	THIS.dataImportRequestHandler = "";
 	
 	// java defaults
 	THIS.javaLoaderInstance = "";
@@ -22,6 +26,7 @@
 	<cfargument name="queueSize" required="false" type="numeric" default="100" hint="The buffer size before the documents are sent to the server">
 	<cfargument name="threadCount" required="false" type="numeric" default="5" hint="The number of background threads used to empty the queue">
 	<cfargument name="binaryEnabled" required="false" type="boolean" default="true" hint="Should we use the faster binary data transfer format?">
+	<cfargument name="dataImportRequestHandler" required="false" type="string" default="/dataimport" hint="Data import request handler. Data Import Handler (DIH) only." />
 	
 	<cfset var BinaryRequestWriter = "" />
 	
@@ -32,6 +37,7 @@
 	<cfset THIS.solrURL = "http://#THIS.host#:#THIS.port##THIS.path#" />
 	<cfset THIS.queueSize = ARGUMENTS.queueSize />
 	<cfset THIS.threadCount = ARGUMENTS.threadCount />
+	<cfset THIS.dataImportRequestHandler = ARGUMENTS.dataImportRequestHandler />
 	
 	<cfscript>
 	// create an update server instance
@@ -40,7 +46,15 @@
 	// create a query server instance
 	THIS.solrQueryServer = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpSolrServer").init(THIS.solrURL);
 	
+	if ( structKeyExists(arguments, "username") ) {
+		THIS.username = arguments.username;
+	}
+	if ( structKeyExists(arguments, "password") ) {
+		THIS.password = arguments.password;
+	}
+	
 	if ( structKeyExists(arguments, "username") and structKeyExists(arguments, "password") ) {
+		THIS.isAccessAuthenticated = true;
 		// set up basic authentication
 		THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.impl.HttpClientUtil")
 			.setBasicAuth(
@@ -365,4 +379,125 @@
 
 <cffunction name="optimize" access="public" output="false" hint="Commit all pending changes to the index">
 	<cfset THIS.solrUpdateServer.optimize() />
+</cffunction>
+
+<!---
+	Developed against Solr 4.3
+	See http://wiki.apache.org/solr/DataImportHandler#commands for argument explanations."
+--->
+<cffunction name="dataImport" access="public" output="false" returntype="struct" hint="Perform data import operation." >
+	<cfargument name="command" type="string" default="full-import" hint="(*full-import|delta-import|status|reload-config|abort)" />
+	<cfargument name="requestHandler" type="string" default="#THIS.dataImportRequestHandler#" />
+	
+	<!--- response output options --->
+	<cfargument name="wt" type="string" default="xml" hint="(*xml|json|python|ruby|php|csv) - It's not clear what affect (if any) a non-default value might have--this isn't well documented in Solr." />
+	<cfargument name="indent" type="boolean" default="false" />
+	<cfargument name="verbose" type="boolean" default="false" />
+	
+	<!--- for command=full-import or delta-import --->
+	<cfargument name="entity" type="string" />
+	<cfargument name="clean" type="boolean" default="true" />
+	<cfargument name="commit" type="boolean" default="true" />
+	<cfargument name="optimize" type="boolean" default="false" />
+	<cfargument name="debug" type="boolean" default="false" />
+	
+	<cfscript>
+	var tempArray = arrayNew(1);
+	// create a query
+	var solrQuery = THIS.javaLoaderInstance.create("org.apache.solr.client.solrj.SolrQuery") ;
+	solrQuery.setRequestHandler(arguments.requestHandler);
+	
+	if ( structKeyExists(arguments, "command") ) {
+		
+		tempArray[1] = arguments.command;
+		solrQuery.set( "command", tempArray );
+		
+		if ( listFind("full-import,delta-import", arguments.command) ) {
+
+			if ( structKeyExists(arguments, "entity") ) {
+				tempArray[1] = arguments.entity;
+				solrQuery.set( "entity", tempArray );
+			}
+			if ( structKeyExists(arguments, "clean") ) {
+				solrQuery.set( "clean", javaCast("boolean", arguments.clean) );
+			}
+			if ( structKeyExists(arguments, "commit") ) {
+				solrQuery.set( "commit", javaCast("boolean", arguments.commit) );
+			}
+			if ( structKeyExists(arguments, "optimize") ) {
+				solrQuery.set( "optimize", javaCast("boolean", arguments.optimize) );
+			}
+			if ( structKeyExists(arguments, "debug") ) {
+				solrQuery.set( "debug", javaCast("boolean", arguments.debug) );
+			}
+		
+		}
+	}
+	
+	if ( structKeyExists(arguments, "wt") ) {
+		tempArray[1] = arguments.wt;
+		solrQuery.set( "wt", tempArray );
+	}
+	if ( structKeyExists(arguments, "indent") ) {
+		solrQuery.set( "indent", javaCast("boolean", arguments.indent) );
+	}
+	if ( structKeyExists(arguments, "verbose") ) {
+		solrQuery.set( "verbose", javaCast("boolean", arguments.verbose) );
+	}
+	
+	// this result isn't that useful, as it doesn't really get the result
+	// of *this* request, since the processing doesn't complete instantaneously. 
+	return parseSolrNamedListType( THIS.solrQueryServer.query(solrQuery).getResponse() );
+
+	</cfscript>
+	
+</cffunction>
+
+<!--- Developed against Solr 4.3 --->
+<cffunction name="parseSolrNamedListType" access="public" output="false" returntype="struct" hint="Converts a straight Solr Named List to something that's easier to work with. This is useful for Data Import Handler responses." >
+	<cfargument name="varToParse" type="any" required="true" hint="Solr response to parse." />
+	<cfscript>
+	var i = 0;
+	var outSct = {};
+	var thisValueRaw = "";
+	var thisValueProcessed = "";
+	
+	if ( isSolrNamedListType(varToParse) ) {
+		
+		for (i=0; i lt varToParse.size(); i=i+1) {
+			try {
+				thisValueRaw = varToParse.getVal(i);
+				if ( isSolrNamedListType(thisValueRaw) ) { // do we need to call this function recursively? (these lists are often nested.)
+					thisValueProcessed = parseSolrNamedListType(thisValueRaw);
+				} else { // just a regular object (that cf knows how to work with)
+					thisValueProcessed = thisValueRaw;
+				}
+				// build the structure to return
+				outSct[varToParse.getName(i)] = thisValueProcessed;
+			} catch (any e) {
+				writeLog(
+					type="information",
+					text="Solr response parsing failed on: " &varToParse.getName(i) &"- " &thisValueRaw.toString() &" type: " &getMetaData(thisValueRaw).getName()
+				);
+			}
+		}
+		
+	}
+	
+	return outSct;
+	</cfscript>
+</cffunction>
+
+<!--- Developed against Solr 4.3 --->
+<cffunction name="isSolrNamedListType" access="public" output="false" returntype="boolean" hint="Is the passed variable an instance of org.apache.solr.common.util.NamedList?" >
+	<cfargument name="varToCheck" type="any" required="true" />
+	<cfscript>
+	return
+		isObject(arguments.varToCheck)
+		and listFind (
+			"org.apache.solr.common.util.SimpleOrderedMap,org.apache.solr.common.util.NamedList",
+			getMetaData(arguments.varToCheck).getName()
+		)
+	;	
+	</cfscript>
 </cffunction>
