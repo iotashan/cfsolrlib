@@ -79,11 +79,11 @@
 	<cfargument name="coreName" type="string" required="true" hint="Solr core name" />
     
     <cfscript>
-		h = new http();
+		var h = new http();
 		h.setMethod("get");
 		h.setURL("#THIS.solrURL#/#ARGUMENTS.coreName#/admin/ping");
-		pingResponse = h.send().getPrefix().statusCode;
-		coreCheckResponse = structNew();
+		var pingResponse = h.send().getPrefix().statusCode;
+		var coreCheckResponse = structNew();
 		if (pingResponse eq "200 OK"){
 			coreCheckResponse.success = true;
 			coreCheckResponse.statusCode = pingResponse;
@@ -104,7 +104,7 @@
     <cfargument name="schemaName" type="string" required="false" hint="Name of schema file" />
     
     <cfscript>
-		URLString = "#THIS.host#:#THIS.port#/solr/admin/cores?action=CREATE&name=#ARGUMENTS.coreName#&instanceDir=#instanceDir#";
+		var URLString = "#THIS.host#:#THIS.port#/solr/admin/cores?action=CREATE&name=#ARGUMENTS.coreName#&instanceDir=#instanceDir#";
 		if (structKeyExists(ARGUMENTS, "dataDir")){
 			URLString = "#URLString#&dataDir=#ARGUMENTS.dataDir#";
 		}
@@ -114,11 +114,11 @@
 		if (structKeyExists(ARGUMENTS, "schemaName")){
 			URLString = "#URLString#&schema=#ARGUMENTS.schemaName#";
 		}
-		newCoreRequest = new http();
+		var newCoreRequest = new http();
 		newCoreRequest.setMethod("get");
 		newCoreRequest.setURL("#URLString#");
-		response = newCoreRequest.send().getPrefix();
-		coreCreationResponse = structNew();
+		var response = newCoreRequest.send().getPrefix();
+		var coreCreationResponse = structNew();
 		if (response.statusCode eq "200 OK"){
 			coreCreationResponse.success = true;
 			return coreCreationResponse;
@@ -148,6 +148,7 @@
 	<cfset var suggestions = "" />
 	<cfset var thisSuggestion = "" />
 	<cfset var iSuggestion = "" />
+	<cfset var currentResult = {} />
 
 	<cfif NOT arrayIsEmpty(ARGUMENTS.facetFields)>
 		<cfset thisQuery.setFacet(true)>
@@ -225,7 +226,7 @@
         	<!--- Remove any leading spaces in the search term --->
 			<cfset ARGUMENTS.term = "#trim(ARGUMENTS.term)#">
 			<cfscript>
-                h = new http();
+                var h = new http();
                 h.setMethod("get");
                 h.setURL("#THIS.solrURL#/suggest?q=#ARGUMENTS.term#");
                 local.suggestResponse = h.send().getPrefix().Filecontent;
@@ -234,11 +235,11 @@
 					local.wordList = "";
 					if (ArrayLen(XMLResponse.response.lst) gt 1 AND structKeyExists(XMLResponse.response.lst[2].lst, "lst")){
 						local.wordCount = ArrayLen(XMLResponse.response.lst[2].lst.lst);
-						For (j=1;j LTE local.wordCount; j=j+1){
+						For (var j=1;j LTE local.wordCount; j=j+1){
 							if(j eq local.wordCount){
 								local.resultCount = XMLResponse.response.lst[2].lst.lst[j].int[1].XmlText;
 								local.resultList = arrayNew(1);
-								For (i=1;i LTE local.resultCount; i=i+1){
+								For (var i=1;i LTE local.resultCount; i=i+1){
 									arrayAppend(local.resultList, local.wordList & XMLResponse.response.lst[2].lst.lst[j].arr.str[i].XmlText);
 								}
 							}else{
@@ -462,22 +463,22 @@
 	var thisValueRaw = "";
 	var thisValueProcessed = "";
 	
-	if ( isSolrNamedListType(varToParse) ) {
+	if ( isSolrNamedListType(arguments.varToParse) ) {
 		
-		for (i=0; i lt varToParse.size(); i=i+1) {
+		for (i=0; i lt arguments.varToParse.size(); i=i+1) {
 			try {
-				thisValueRaw = varToParse.getVal(i);
+				thisValueRaw = arguments.varToParse.getVal(i);
 				if ( isSolrNamedListType(thisValueRaw) ) { // do we need to call this function recursively? (these lists are often nested.)
 					thisValueProcessed = parseSolrNamedListType(thisValueRaw);
 				} else { // just a regular object (that cf knows how to work with)
 					thisValueProcessed = thisValueRaw;
 				}
 				// build the structure to return
-				outSct[varToParse.getName(i)] = thisValueProcessed;
+				outSct[arguments.varToParse.getName(i)] = thisValueProcessed;
 			} catch (any e) {
 				writeLog(
 					type="information",
-					text="Solr response parsing failed on: " &varToParse.getName(i) &"- " &thisValueRaw.toString() &" type: " &getMetaData(thisValueRaw).getName()
+					text="Solr response parsing failed on: " &arguments.varToParse.getName(i) &"- " &thisValueRaw.toString() &" type: " &getMetaData(thisValueRaw).getName()
 				);
 			}
 		}
