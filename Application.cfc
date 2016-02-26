@@ -1,7 +1,7 @@
-<cfset THIS.name = "cfsolrlibDemo" />
+component{
+	THIS.name = "cfsolrlibDemo" />
 
-<cffunction name="onApplicationStart">
-	<cfscript>
+	public boolean function onApplicationStart(){
 		// load libraries needed for solrj
 		var paths = arrayNew(1);
 		arrayAppend(paths,expandPath("solrj-lib/solr-solrj-4.0.0.jar"));
@@ -22,11 +22,14 @@
 		// setup tika
 		APPLICATION.tika = APPLICATION.javaloader.create("org.apache.tika.Tika").init();
 
-	</cfscript>
-</cffunction>
+		return true;
+	}
 
-<cffunction name="onRequestStart">
-	<cfif structKeyExists(url, "reinit")>
-    	<cfset onApplicationStart()>
-    </cfif>
-</cffunction>
+	public boolean function onRequestStart(){
+		if( structKeyExists(url, "reinit") ){
+    			onApplicationStart();
+    		}
+    		
+    		return true;
+	}
+}
