@@ -1,5 +1,5 @@
 component{
-	THIS.name = "cfsolrlibDemo" />
+	THIS.name = "cfsolrlibDemo";
 
 	public boolean function onApplicationStart(){
 		// load libraries needed for solrj
